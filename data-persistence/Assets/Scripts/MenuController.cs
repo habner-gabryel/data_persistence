@@ -7,12 +7,24 @@ using UnityEngine.SceneManagement;
 public class MenuController : MonoBehaviour
 {
     public InputField inputField;
-
+    public string nameToSave;
     
-    public void StartNew() {
-        
-        SceneManager.LoadScene(1);
+    void Start ()
+    {
+        inputField.onEndEdit.AddListener(SubmitName);  
     }
+
+    public void SubmitName(string name){
+        nameToSave = name;
+    }
+
+    public void StartNew() {
+        SceneManager.LoadScene(1);
+
+        MainManager.Instance.SavePlayerName(nameToSave);
+
+    }
+    
 
     // Update is called once per frame
     void Update()

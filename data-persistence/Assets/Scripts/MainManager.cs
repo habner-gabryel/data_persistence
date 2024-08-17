@@ -13,15 +13,28 @@ public class MainManager : MonoBehaviour
     public Text ScoreText;
     public Text BestScoreText;
     public GameObject GameOverText;
-    private bool m_Started = false;
+    protected bool m_Started = false;
     private int m_Points;
-    private bool m_GameOver = false;
+    protected bool m_GameOver = false;
     public static MainManager Instance;
     public string playerName;
     public string recordPlayer;
     public int recordPoints;
-    private static string path = Application.persistentDataPath + "/savefile.json";
-    private string persistentDataPath;
+    private string path => Path.Combine(Application.persistentDataPath, "/savefile.json");
+    private string pathName => Path.Combine(Application.persistentDataPath, "/save-playername-file.json");
+
+    [System.Serializable]
+    class ScoreData
+    {
+        public string playerName;
+        public int score;
+    }
+
+    [System.Serializable]
+    class NameData
+    {
+        public string playerName;
+    }
 
     private void Awake(){
         if (Instance != null) {
@@ -33,13 +46,6 @@ public class MainManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
-    [System.Serializable]
-    class SaveData
-    {
-        public string playerName;
-        public int score;
-    }
-
     public void SaveRecord()
     {
         if(File.Exists(path))
@@ -47,7 +53,7 @@ public class MainManager : MonoBehaviour
             File.Delete(path);
         }
 
-        SaveData data = new SaveData();
+        ScoreData data = new ScoreData();
         data.playerName = playerName;
         data.score = m_Points;
 
@@ -56,10 +62,20 @@ public class MainManager : MonoBehaviour
         File.WriteAllText(path, json);
     }
 
+    public void SavePlayerName(string name) {
+        NameData data = new NameData();
+        data.playerName = name;
+
+        string json = JsonUtility.ToJson(data);
+
+        File.WriteAllText(pathName, json);
+    }
+
     public void SaveNewRecord() {
         getRecordScore();
 
         if(m_Points > recordPoints){
+            getPlayerName();
             SaveRecord();
         }
     }
@@ -68,25 +84,37 @@ public class MainManager : MonoBehaviour
         if (File.Exists(path))
         {
             string json = File.ReadAllText(path);
-            SaveData data = JsonUtility.FromJson<SaveData>(json);
+            ScoreData data = JsonUtility.FromJson<ScoreData>(json);
 
             recordPoints = data.score;
             recordPlayer = data.playerName;
         }
 
-        if(!recordPlayer.Equals("") && recordPoints != 0){
+        if(recordPlayer != null && !recordPlayer.Equals("") && recordPoints != 0){
             BestScoreText.text = "Record : " + recordPlayer + " - " + recordPoints;
         } else {
-            BestScoreText.text = "Record : ";
+            BestScoreText.text = "Record :";
+        }
+    }
+
+    public void getPlayerName() {
+        if (File.Exists(pathName))
+        {
+            string json = File.ReadAllText(pathName);
+            ScoreData data = JsonUtility.FromJson<ScoreData>(json);
+
+            playerName = data.playerName;
         }
     }
 
     void Start()
     {
-        persistentDataPath = Application.persistentDataPath;
-
         const float step = 0.6f;
         int perLine = Mathf.FloorToInt(4.0f / step);
+
+        m_Points = 0;
+        m_Started = false;
+        m_GameOver = false;
         
         int[] pointCountArray = new [] {1,1,2,2,5,5};
         for (int i = 0; i < LineCount; ++i)
@@ -122,7 +150,8 @@ public class MainManager : MonoBehaviour
         {
             if (Input.GetKeyDown(KeyCode.Space))
             {
-                SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+                Destroy(gameObject);
+                SceneManager.LoadScene(0);
             }
         }
     }
