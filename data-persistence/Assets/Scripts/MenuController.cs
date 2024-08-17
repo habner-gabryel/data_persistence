@@ -20,9 +20,7 @@ public class MenuController : MonoBehaviour
 
     public void StartNew() {
         SceneManager.LoadScene(1);
-
         MainManager.Instance.SavePlayerName(nameToSave);
-
     }
     
 
